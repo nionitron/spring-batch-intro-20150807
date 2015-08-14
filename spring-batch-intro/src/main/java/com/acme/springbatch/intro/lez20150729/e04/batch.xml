@@ -1,0 +1,50 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:batch="http://www.springframework.org/schema/batch" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch.xsd">
+
+	<batch:job id="jobEsempioAsyncItemProcessorWriter">
+		<batch:step id="stepLetturaScrittura">
+			<batch:tasklet>
+				<batch:chunk reader="itemReader" processor="asyncItemProcessor" writer="asyncItemWriter"
+					commit-interval="10" />
+			</batch:tasklet>
+		</batch:step>
+	</batch:job>
+
+	<bean id="itemReader" class="org.springframework.batch.item.file.FlatFileItemReader">
+		<property name="resource" value="file:files/mio-input.txt" />
+		<property name="lineMapper">
+			<bean
+				class="org.springframework.batch.item.file.mapping.PassThroughLineMapper" />
+		</property>
+	</bean>
+
+	<bean id="asyncItemProcessor" class="org.springframework.batch.integration.async.AsyncItemProcessor">
+		<property name="delegate">
+			<bean class="com.acme.springbatch.intro.lez20150729.e04.MioProcessor" />
+		</property>
+		<property name="taskExecutor" ref="taskExecutor" />
+	</bean>
+	
+	<bean id="asyncItemWriter" class="org.springframework.batch.integration.async.AsyncItemWriter">
+		<property name="delegate">
+			<bean class="com.acme.springbatch.intro.lez20150729.e04.MioWriter" />
+		</property>
+	</bean>
+	
+	<bean id="taskExecutor" class="org.springframework.core.task.SimpleAsyncTaskExecutor" />
+
+	<bean id="jobLauncher"
+		class="org.springframework.batch.core.launch.support.SimpleJobLauncher">
+		<property name="jobRepository" ref="jobRepository" />
+	</bean>
+
+	<bean id="jobRepository"
+		class="org.springframework.batch.core.repository.support.MapJobRepositoryFactoryBean" />
+
+	<bean id="transactionManager"
+		class="org.springframework.batch.support.transaction.ResourcelessTransactionManager" />
+
+</beans>

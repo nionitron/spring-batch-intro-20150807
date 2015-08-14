@@ -1,0 +1,82 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:batch="http://www.springframework.org/schema/batch" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xsi:schemaLocation="
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc.xsd
+           http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch.xsd">
+
+	<batch:job id="mioJob">
+		<batch:step id="mioStep">
+			<batch:tasklet>
+				<batch:chunk reader="itemReader" processor="itemProcessor"
+					writer="itemWriter" commit-interval="10000" />
+				
+				<batch:listeners>
+					<batch:listener>
+						<bean class="com.acme.springbatch.intro.lez20150804.e01.listeners.MioChunkListener" />
+					</batch:listener>
+				</batch:listeners>
+			</batch:tasklet>
+		</batch:step>
+	</batch:job>
+
+	<context:annotation-config />
+
+	<bean id="itemReader" class="org.springframework.batch.item.file.FlatFileItemReader">
+		<property name="resource" value="file:files/arca4u.log.2015-05-18" />
+		<property name="lineMapper">
+			<bean
+				class="org.springframework.batch.item.file.mapping.PassThroughLineMapper" />
+		</property>
+	</bean>
+
+	<bean id="itemProcessor"
+		class="com.acme.springbatch.intro.lez20150805.LogAccessoItemProcessor"
+		scope="step">
+		<property name="loginDaFiltrare" value="#{jobParameters['login-da-filtrare']}" />
+		<property name="numeroMassimoRisultati" value="25" />
+	</bean>
+
+	<bean id="itemWriter" class="org.springframework.batch.item.file.FlatFileItemWriter">
+		<property name="resource" value="file:files/springbatch.out" />
+		<property name="lineAggregator">
+			<bean
+				class="com.acme.springbatch.intro.lez20150805.LogAccessoLineAggregator" />
+		</property>
+	</bean>
+
+	<!-- Infrastruttura -->
+
+	<bean id="jobLauncher"
+		class="org.springframework.batch.core.launch.support.SimpleJobLauncher">
+		<property name="jobRepository" ref="jobRepository" />
+	</bean>
+
+	<bean id="jobRepository"
+		class="org.springframework.batch.core.repository.support.JobRepositoryFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="transactionManager" ref="transactionManager" />
+	</bean>
+
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="org.h2.Driver" />
+		<property name="url" value="jdbc:h2:file:./database/miobatch" />
+		<property name="username" value="sa" />
+		<property name="password" value="" />
+	</bean>
+
+	<jdbc:initialize-database data-source="dataSource"
+		ignore-failures="ALL">
+		<jdbc:script location="org/springframework/batch/core/schema-h2.sql" />
+	</jdbc:initialize-database>
+
+</beans>

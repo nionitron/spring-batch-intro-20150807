@@ -1,0 +1,40 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:batch="http://www.springframework.org/schema/batch" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch.xsd">
+
+	<batch:job id="jobEsempioRepeatLogic">
+		<batch:step id="stepRipetitivo">
+			<batch:tasklet ref="taskletRipetitiva">
+				<!-- <batch:listeners> -->
+				<!-- <batch:listener ref="chunkListener" /> -->
+				<!-- </batch:listeners> -->
+			</batch:tasklet>
+
+			<batch:listeners>
+				<batch:listener ref="stepListener" />
+			</batch:listeners>
+		</batch:step>
+	</batch:job>
+
+	<bean id="taskletRipetitiva"
+		class="com.acme.springbatch.intro.lez20150804.e04.TaskletRipetitiva" />
+
+	<bean id="stepListener"
+		class="com.acme.springbatch.intro.lez20150804.e01.listeners.MioStepExecutionListener" />
+	<bean id="chunkListener"
+		class="com.acme.springbatch.intro.lez20150804.e01.listeners.MioChunkListener" />
+
+	<bean id="jobLauncher"
+		class="org.springframework.batch.core.launch.support.SimpleJobLauncher">
+		<property name="jobRepository" ref="jobRepository" />
+	</bean>
+
+	<bean id="jobRepository"
+		class="org.springframework.batch.core.repository.support.MapJobRepositoryFactoryBean" />
+
+	<bean id="transactionManager"
+		class="org.springframework.batch.support.transaction.ResourcelessTransactionManager" />
+
+</beans>

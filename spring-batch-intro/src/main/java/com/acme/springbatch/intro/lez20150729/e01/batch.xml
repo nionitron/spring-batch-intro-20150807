@@ -1,0 +1,45 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:batch="http://www.springframework.org/schema/batch" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch.xsd">
+
+	<batch:job id="jobEnigmista">
+		<batch:step id="stepMostraMenu" next="stepDecisione">
+			<batch:tasklet ref="taskletMostraMenu" />
+		</batch:step>
+		
+		<batch:decision id="stepDecisione" decider="sceltaDecider">
+			<batch:next on="TESTA" to="stepTesta" />
+			<batch:next on="CROCE" to="stepCroce" />
+			<batch:end on="FINE" />
+			<batch:fail on="ERRORE" />
+			<batch:next on="*" to="stepMostraMenu" />
+		</batch:decision>
+		
+		<batch:step id="stepTesta">
+			<batch:tasklet ref="taskletTesta" />
+		</batch:step>
+		
+		<batch:step id="stepCroce">
+			<batch:tasklet ref="taskletCroce" />
+		</batch:step>
+	</batch:job>
+	
+	<bean id="taskletMostraMenu" class="com.acme.springbatch.intro.lez20150729.e01.MostraMenuTasklet" />
+	<bean id="taskletTesta" class="com.acme.springbatch.intro.lez20150729.e01.TestaTasklet" />
+	<bean id="taskletCroce" class="com.acme.springbatch.intro.lez20150729.e01.CroceTasklet" />
+	<bean id="sceltaDecider" class="com.acme.springbatch.intro.lez20150729.e01.SceltaDecider" />
+
+	<bean id="jobLauncher"
+		class="org.springframework.batch.core.launch.support.SimpleJobLauncher">
+		<property name="jobRepository" ref="jobRepository" />
+	</bean>
+
+	<bean id="jobRepository"
+		class="org.springframework.batch.core.repository.support.MapJobRepositoryFactoryBean" />
+
+	<bean id="transactionManager"
+		class="org.springframework.batch.support.transaction.ResourcelessTransactionManager" />
+
+</beans>

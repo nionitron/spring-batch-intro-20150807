@@ -1,0 +1,61 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:batch="http://www.springframework.org/schema/batch" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch.xsd">
+
+	<batch:job id="jobEsempioPartitioning">
+		<batch:step id="stepMaster">
+			<batch:partition step="stepSlave" partitioner="logFilePartitioner">
+				<batch:handler grid-size="4" task-executor="taskExecutor" />
+			</batch:partition>
+		</batch:step>
+	</batch:job>
+	
+	<batch:step id="stepSlave">
+		<batch:tasklet>
+			<batch:chunk reader="itemReader" writer="itemWriter" commit-interval="10" />
+		</batch:tasklet>
+	</batch:step>
+	
+	<context:annotation-config />
+	
+	<bean id="logFilePartitioner" class="com.acme.springbatch.intro.lez20150729.e02.InputFilePartitioner">
+		<property name="fileDiInput" value="file:files/arca4u.log.2015-05-18" />
+	</bean>
+	
+	<bean id="taskExecutor" class="org.springframework.core.task.SimpleAsyncTaskExecutor" />
+	
+	<bean id="itemReader" class="org.springframework.batch.item.file.FlatFileItemReader"
+		scope="step">
+		<property name="resource" value="file:files/arca4u.log.2015-05-18" />
+		<property name="lineMapper">
+			<bean
+				class="org.springframework.batch.item.file.mapping.PassThroughLineMapper" />
+		</property>
+		<property name="currentItemCount" value="#{stepExecutionContext['da-riga']}" />
+		<property name="maxItemCount" value="#{stepExecutionContext['a-riga']}" />
+	</bean>
+	
+	<bean id="itemWriter" class="org.springframework.batch.item.file.FlatFileItemWriter"
+		scope="step">
+		<property name="resource" value="file:files/#{stepExecutionContext['file-output']}" />
+		<property name="lineAggregator">
+			<bean class="org.springframework.batch.item.file.transform.PassThroughLineAggregator" />
+		</property>
+	</bean>
+		
+	<bean id="jobLauncher"
+		class="org.springframework.batch.core.launch.support.SimpleJobLauncher">
+		<property name="jobRepository" ref="jobRepository" />
+	</bean>
+
+	<bean id="jobRepository"
+		class="org.springframework.batch.core.repository.support.MapJobRepositoryFactoryBean" />
+
+	<bean id="transactionManager"
+		class="org.springframework.batch.support.transaction.ResourcelessTransactionManager" />
+
+</beans>

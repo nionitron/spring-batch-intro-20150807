@@ -1,0 +1,85 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:batch="http://www.springframework.org/schema/batch" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch.xsd">
+
+	<batch:job id="jobEsempioListeners">
+		<batch:step id="stepIniziale" next="stepLetturaScrittura">
+			<batch:tasklet ref="taskletIniziale" />
+
+			<batch:listeners>
+			<batch:listener ref="stepListener" />
+			</batch:listeners>
+		</batch:step>
+
+		<batch:step id="stepLetturaScrittura">
+			<batch:tasklet>
+				<batch:chunk reader="itemReader" processor="itemProcessor"
+					writer="itemWriter" commit-interval="10">
+
+<!-- 					<batch:listeners> -->
+<!-- 					<batch:listener ref="itemReadListener" /> -->
+<!-- 					<batch:listener ref="itemProcessListener" /> -->
+<!-- 					<batch:listener ref="itemWriteListener" /> -->
+<!-- 					</batch:listeners> -->
+				</batch:chunk>
+
+				<!-- <batch:listeners> -->
+				<!-- <batch:listener ref="chunkListener" /> -->
+				<!-- </batch:listeners> -->
+			</batch:tasklet>
+
+			<!-- <batch:listeners> -->
+			<!-- <batch:listener ref="stepListener" /> -->
+			<!-- </batch:listeners> -->
+		</batch:step>
+
+		<!-- <batch:listeners> -->
+		<!-- <batch:listener ref="jobListener" /> -->
+		<!-- </batch:listeners> -->
+	</batch:job>
+
+	<bean id="taskletIniziale" class="com.acme.springbatch.intro.lez20150804.e01.MiaTasklet" />
+
+	<bean id="itemReader" class="org.springframework.batch.item.file.FlatFileItemReader">
+		<property name="resource" value="file:files/mio-input.txt" />
+		<property name="lineMapper">
+			<bean
+				class="org.springframework.batch.item.file.mapping.PassThroughLineMapper" />
+		</property>
+	</bean>
+
+	<bean id="itemProcessor" class="com.acme.springbatch.intro.lez20150804.e01.MioProcessor" />
+
+	<bean id="itemWriter" class="com.acme.springbatch.intro.lez20150804.e01.MioWriter" />
+
+	<!-- Listeners -->
+
+	<bean id="jobListener"
+		class="com.acme.springbatch.intro.lez20150804.e01.listeners.MioJobExecutionListener" />
+	<bean id="stepListener"
+		class="com.acme.springbatch.intro.lez20150804.e01.listeners.MioStepExecutionListener" />
+	<bean id="chunkListener"
+		class="com.acme.springbatch.intro.lez20150804.e01.listeners.MioChunkListener" />
+	<bean id="itemReadListener"
+		class="com.acme.springbatch.intro.lez20150804.e01.listeners.MioItemReadListener" />
+	<bean id="itemProcessListener"
+		class="com.acme.springbatch.intro.lez20150804.e01.listeners.MioItemProcessListener" />
+	<bean id="itemWriteListener"
+		class="com.acme.springbatch.intro.lez20150804.e01.listeners.MioItemWriteListener" />
+
+	<!-- End of listeners -->
+
+	<bean id="jobLauncher"
+		class="org.springframework.batch.core.launch.support.SimpleJobLauncher">
+		<property name="jobRepository" ref="jobRepository" />
+	</bean>
+
+	<bean id="jobRepository"
+		class="org.springframework.batch.core.repository.support.MapJobRepositoryFactoryBean" />
+
+	<bean id="transactionManager"
+		class="org.springframework.batch.support.transaction.ResourcelessTransactionManager" />
+
+</beans>

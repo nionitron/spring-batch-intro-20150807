@@ -1,0 +1,63 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:batch="http://www.springframework.org/schema/batch" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xsi:schemaLocation="
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc.xsd
+           http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch.xsd">
+
+	<batch:job id="jobEsempioCompletionPolicy">
+		<batch:step id="stepCalcolaStatisticheAccesso">
+			<batch:tasklet>
+				<batch:chunk reader="itemReader" processor="itemProcessor"
+					writer="itemWriter" chunk-completion-policy="itemReader" />
+				<!-- commit-interval="10000" -->
+				<batch:listeners>
+					<batch:listener>
+						<bean
+							class="com.acme.springbatch.intro.lez20150804.e01.listeners.MioChunkListener" />
+					</batch:listener>
+				</batch:listeners>
+			</batch:tasklet>
+		</batch:step>
+	</batch:job>
+
+	<context:annotation-config />
+
+	<bean id="itemReader"
+		class="com.acme.springbatch.intro.lez20150807.e03.MioItemReaderConLogicaDiRottura">
+		<property name="delegate">
+			<bean class="org.springframework.batch.item.file.FlatFileItemReader">
+				<property name="resource" value="file:files/arca4u.log.2015-05-18" />
+				<property name="lineMapper">
+					<bean
+						class="org.springframework.batch.item.file.mapping.PassThroughLineMapper" />
+				</property>
+			</bean>
+		</property>
+		<property name="loginPerRottura" value="erigo1" />
+	</bean>
+
+
+	<bean id="itemProcessor"
+		class="com.acme.springbatch.intro.lez20150807.e03.LogAccessoItemProcessor" />
+
+	<bean id="itemWriter"
+		class="com.acme.springbatch.intro.lez20150807.e03.LogAccessoItemWriter" />
+
+	<!-- Infrastruttura -->
+
+	<bean id="jobLauncher"
+		class="org.springframework.batch.core.launch.support.SimpleJobLauncher">
+		<property name="jobRepository" ref="jobRepository" />
+	</bean>
+
+	<bean id="jobRepository"
+		class="org.springframework.batch.core.repository.support.MapJobRepositoryFactoryBean" />
+
+	<bean id="transactionManager"
+		class="org.springframework.batch.support.transaction.ResourcelessTransactionManager" />
+
+</beans>

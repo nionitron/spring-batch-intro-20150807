@@ -1,0 +1,70 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:batch="http://www.springframework.org/schema/batch" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch.xsd">
+
+	<batch:job id="mioJob">
+		<batch:step id="stepControlliIniziali" next="mioStep">
+			<batch:tasklet ref="controlliInizialiTasklet" />
+		</batch:step>
+		<batch:step id="mioStep" next="stepControlliFinali">
+			<batch:tasklet>
+				<batch:chunk reader="itemReader" processor="itemProcessor"
+					writer="itemWriter" commit-interval="#{jobParameters['chunk-size'] ?: 10}" />
+			</batch:tasklet>
+		</batch:step>
+		<batch:step id="stepControlliFinali">
+			<batch:tasklet ref="controlliFinaliTasklet" />
+		</batch:step>
+	</batch:job>
+	
+	<context:annotation-config />
+
+	<bean id="controlliInizialiTasklet"
+		class="com.acme.springbatch.intro.e08.ControllaPresenzaFileTasklet">
+		<property name="fileDaControllare" value="file:${LogAccesso.input.file.path}" />
+	</bean>
+
+	<bean id="controlliFinaliTasklet"
+		class="com.acme.springbatch.intro.e08.ControllaPresenzaFileTasklet">
+		<property name="fileDaControllare" value="file:${LogAccesso.output.file.path}" />
+	</bean>
+	
+	<context:property-placeholder
+		location="com/acme/springbatch/intro/e10/batch.properties" />
+
+	<bean id="itemReader" class="org.springframework.batch.item.file.FlatFileItemReader">
+		<property name="resource" value="file:${LogAccesso.input.file.path}" />
+		<property name="lineMapper">
+			<bean
+				class="org.springframework.batch.item.file.mapping.PassThroughLineMapper" />
+		</property>
+	</bean>
+	
+	<bean id="itemProcessor" class="com.acme.springbatch.intro.e10.LogAccessoItemProcessor" />
+
+	<bean id="itemWriter" class="org.springframework.batch.item.file.FlatFileItemWriter">
+		<property name="resource" value="file:${LogAccesso.output.file.path}"></property>
+		<property name="lineAggregator">
+			<bean class="com.acme.springbatch.intro.e10.LogAccessoLineAggregator"
+				scope="step">
+				<property name="loginDaEvidenziare" value="#{jobParameters['login-da-evidenziare']}" />
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="jobLauncher"
+		class="org.springframework.batch.core.launch.support.SimpleJobLauncher">
+		<property name="jobRepository" ref="jobRepository" />
+	</bean>
+
+	<bean id="jobRepository"
+		class="org.springframework.batch.core.repository.support.MapJobRepositoryFactoryBean" />
+
+	<bean id="transactionManager"
+		class="org.springframework.batch.support.transaction.ResourcelessTransactionManager" />
+
+</beans>
